@@ -38,7 +38,7 @@
         <worldbody>
             <geom size="0 0 0.1" pos="0 0 0" type="plane" material="matplane" />
             <light pos="0 0 100" dir="0 0 -1" diffuse="0.5 0.5 0.5" castshadow="false"/>  
-
+ 
             <!-- Cameras: begin -->
 
             <body name="top" euler="0 0 0" pos="-0.07 0 2.82" >
