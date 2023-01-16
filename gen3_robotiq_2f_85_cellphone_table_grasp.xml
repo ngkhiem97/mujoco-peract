@@ -41,7 +41,7 @@
  
             <!-- Cameras: begin -->
 
-            <body name="top" euler="0 0 0" pos="0.53 0 2.62" >
+            <body name="top" euler="0 0 0" pos="0.53 0 2.52" >
                 <camera name="realsense-top" fovy="41"/>
             </body>
 
