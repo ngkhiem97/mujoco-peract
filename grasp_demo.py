@@ -25,6 +25,9 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
         self.lock = threading.Lock()
         self.lock1 = threading.Lock()
         self.lockcv2 = threading.Lock()
+        self.lockcv2Front = threading.Lock()
+        self.lockcv2Side1 = threading.Lock()
+        self.lockcv2Side2 = threading.Lock()
         self.velocityCtrl = VelocityController()
         parser = ET.XMLParser(encoding="utf-8")
         tree = ET.parse(modelFile, parser=parser)
@@ -63,6 +66,9 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
         self.v_tgt = np.zeros(self.nv)
         self.queue = deque(maxlen=10)
         self.queue_img = deque(maxlen=10)
+        self.queue_img_front = deque(maxlen=10)
+        self.queue_img_side1 = deque(maxlen=10)
+        self.queue_img_side2 = deque(maxlen=10)
         self.action = action
         self.thViewer = threading.Thread(target=self.cv2_viewer, args=())
         self.thViewer.start()
@@ -349,9 +355,6 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
         self.lock.release()
 
     def cv2_viewer(self):
-        title = "Camera Output"
-        cv2.namedWindow(title)
-        
         inc_pos_v = 0.15
         inc_ang_v = 15/180*np.pi
         
@@ -368,16 +371,7 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
         # initial speeds
         ang_v = np.array([1,0,0,0])
         pos_v = np.array([0,0,0])
-        self.twist_ee = np.array([0, 0, 0, 0, 0, 0])        
-
-        if self.action == "pap":
-            gqtgt = self.pick_and_place(gqtgt)
-        elif self.action == "push":
-            gqtgt = self.push(gqtgt)
-        elif self.action == "slide":
-            gqtgt, ang_v = self.slide(gqtgt)
-        else:
-            pass
+        self.twist_ee = np.array([0, 0, 0, 0, 0, 0])
         
         while True:
             twist_ee = self.twist_ee
@@ -480,174 +474,21 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
             self.queue.append(vtgt)                    
             self.lock.release()
             
-            self.show_image(title)
+            # self.show_image(title)
+            self.show_depth_image("Camera Output Top", self.queue_img)
+            self.show_depth_image("Camera Output Front", self.queue_img_front)
+            self.show_depth_image("Camera Output Side 1", self.queue_img_side1)
+            self.show_depth_image("Camera Output Side 2", self.queue_img_side2)
         cv2.destroyAllWindows()
-
-    def pick_and_place(self, gqtgt):
-        time.sleep(3)
-
-        # move down for 1 seconds
-        self.twist_ee = np.array([0.88,0,-0.99,0,0,0])
-        t0 = time.time()
-        duration = 1
-        while time.time() - t0 < duration:
-            self.lock.acquire()
-            vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-            self.queue.append(vtgt*14)                    
-            self.lock.release()
-            time.sleep(0.1)
-
-        # close gripper
-        while gqtgt <= 1.2:
-            gqtgt = gqtgt + 0.1
-            self.lock1.acquire()
-            self.sim.data.ctrl[self.nv] = gqtgt 
-            self.sim.data.ctrl[self.nv+1] = gqtgt
-            self.lock1.release()
-        
-        self.twist_ee = np.array([0,0,0.01,0,0,0])
-        t0 = time.time()
-        duration = 1 # up duration
-        while time.time() - t0 < duration:
-            self.lock.acquire()
-            self.twist_ee *= 2
-            vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-            self.queue.append(vtgt*14)
-            self.lock.release()
-            time.sleep(0.1)
-
-        # move down for 1 seconds
-        self.twist_ee = np.array([-0.99,0,-0.77,0,0,0])
-        t0 = time.time()
-        duration = 2
-        while time.time() - t0 < duration:
-            self.lock.acquire()
-            vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-            self.queue.append(vtgt*12)                    
-            self.lock.release()
-            time.sleep(0.1)
-
-        # open gripper
-        while gqtgt >= 0.0:
-            gqtgt = gqtgt - 0.1
-            self.lock1.acquire()
-            self.sim.data.ctrl[self.nv] = gqtgt 
-            self.sim.data.ctrl[self.nv+1] = gqtgt
-            self.lock1.release()
-
-        self.twist_ee = np.array([0, 0, 0, 0, 0, 0])
-        self.lock.acquire()                    
-        vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-        self.queue.append(vtgt)                    
-        self.lock.release()
-        return gqtgt
-    
-
-
-    def push(self, gqtgt):
-        time.sleep(3)
-
-        # move down for 1 seconds
-        self.twist_ee = np.array([0.45,0,-0.99,0,0,0])
-        t0 = time.time()
-        duration = 1
-        while time.time() - t0 < duration:
-            self.lock.acquire()
-            vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-            self.queue.append(vtgt*14)                    
-            self.lock.release()
-            time.sleep(0.1)
-
-        # close gripper
-        while gqtgt < 1.5:
-            gqtgt = gqtgt + 0.1
-            self.lock1.acquire()
-            self.sim.data.ctrl[self.nv] = gqtgt 
-            self.sim.data.ctrl[self.nv+1] = gqtgt
-            self.lock1.release()
-
-        self.twist_ee = np.array([0, 0, 0, 0, 0, 0])
-        self.lock.acquire()                    
-        vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-        self.queue.append(vtgt)                    
-        self.lock.release()
-        time.sleep(0.1)
-
-        self.twist_ee = np.array([0.99, 0, 0, 0, 0, 0])
-        t0 = time.time()
-        duration = 4
-        while time.time() - t0 < duration:
-            self.lock.acquire()
-            vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-            self.queue.append(vtgt*4)
-            self.lock.release()
-            time.sleep(0.01)
-
-        self.twist_ee = np.array([0, 0, 0, 0, 0, 0])
-        self.lock.acquire()                    
-        vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-        self.queue.append(vtgt)                    
-        self.lock.release()
-        return gqtgt
-
-    def slide(self, gqtgt):
-        time.sleep(3)   
-
-        # move down for 1 seconds
-        self.twist_ee = np.array([0.45,0,-0.99,0,0,0])
-        t0 = time.time()
-        duration = 1
-        while time.time() - t0 < duration:
-            self.lock.acquire()
-            vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-            self.queue.append(vtgt*14)                    
-            self.lock.release()
-            time.sleep(0.1)
-
-        # close gripper
-        while gqtgt < 1.5:
-            gqtgt = gqtgt + 0.1
-            self.lock1.acquire()
-            self.sim.data.ctrl[self.nv] = gqtgt 
-            self.sim.data.ctrl[self.nv+1] = gqtgt
-            self.lock1.release()
-
-        self.twist_ee = np.array([0, 0, 0, 0, 0, 0])
-        self.lock.acquire()                    
-        vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-        self.queue.append(vtgt)                    
-        self.lock.release()
-        time.sleep(0.1)
-
-        ang_v = [np.cos(-(15/180*np.pi)),0,np.sin(-(15/180*np.pi)),0]
-        axang = quat2axang(ang_v)
-        tmp = axang[3]*axang[0:3]
-        self.twist_ee = np.array([0.44, 0, 0, 0, 0, 0])
-        self.twist_ee = np.array([self.twist_ee[0],self.twist_ee[1],self.twist_ee[2],tmp[0]*3,tmp[1]*3,tmp[2]*3])
-        t0 = time.time()
-        duration = 0.9
-        while time.time() - t0 < duration:
-            self.lock.acquire()
-            vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-            self.queue.append(vtgt*32)
-            self.lock.release()
-            time.sleep(0.01)
-
-        self.twist_ee = np.array([0, 0, 0, 0, 0, 0])
-        self.lock.acquire()                    
-        vtgt = self.velocityCtrl.get_joint_vel_worldframe(self.twist_ee, np.array(self.sim.data.qpos[0:7]), np.array(self.sim.data.qvel[0:7]))   
-        self.queue.append(vtgt)                    
-        self.lock.release()
-        return gqtgt,ang_v
-        
-    def show_image(self, title):
+  
+    def show_depth_image(self, title, queue_img):
         znear = 0.01
         zfar = 50.0
 
         image_data = []  
         self.lockcv2.acquire()
-        if len(self.queue_img) != 0:
-            image_data = self.queue_img.popleft() 
+        if len(queue_img) != 0:
+            image_data = queue_img.popleft() 
         self.lockcv2.release()
         if len(image_data) != 0:
             div_near = 1/(znear*self.model.stat.extent)
@@ -656,7 +497,7 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
             image_data = 1/(s*image_data + div_near)
             
             #limit measurement range
-            dplim_upper = 0.7
+            dplim_upper = 2
             dplim_lower = 0.16
             image_data[image_data<=dplim_lower]=0
             image_data[image_data>=dplim_upper]=1.0
@@ -667,6 +508,15 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
             image_data = image_data + image_noise_1 + image_noise_2
             norm_image = cv2.normalize(image_data, None, alpha = 0, beta = 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)            
             cv2.imshow(title, norm_image)
+
+    def show_color_image(self, title, queue_img):
+        image_data = []
+        self.lockcv2.acquire()
+        if len(queue_img) != 0:
+            image_data = queue_img.popleft()
+        self.lockcv2.release()
+        if len(image_data) != 0:
+            cv2.imshow(title, image_data)
 
     def start(self):
         ct = 0       
@@ -682,15 +532,28 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
             self.lock1.release()
             self.viewer.render()
             if ct%17 == 1:
-                self.offscreen.render(width=424, height=240, camera_id=0)
-                a=self.offscreen.read_pixels(width=424, height=240, depth=True)
-                rgb_img = a[0]
-                rgb_img = rgb_img[:, ::-1, ::-1]
-                depth_img = a[1]
-                depth_img = depth_img[:, ::-1]
-                self.lockcv2.acquire()
-                self.queue_img.append(depth_img)
-                self.lockcv2.release()
+                self.push_depth_image_to_queue(self.queue_img,  0,self.lockcv2)
+                self.push_depth_image_to_queue(self.queue_img_front, 1, self.lockcv2Front)
+                self.push_depth_image_to_queue(self.queue_img_side1, 2, self.lockcv2Side1)
+                self.push_depth_image_to_queue(self.queue_img_side2, 3, self.lockcv2Side2)
+
+    def push_rgb_image_to_queue(self, queue_img, camera_id, lockcv2):
+        self.offscreen.render(width=424, height=240, camera_id=camera_id)
+        a=self.offscreen.read_pixels(width=424, height=240, depth=True)
+        rgb_img = a[0]
+        rgb_img = rgb_img[:, ::-1, ::-1]
+        lockcv2.acquire()
+        queue_img.append(rgb_img)
+        lockcv2.release()
+
+    def push_depth_image_to_queue(self, queue_img, camera_id, lockcv2):
+        self.offscreen.render(width=424, height=240, camera_id=camera_id)
+        a=self.offscreen.read_pixels(width=424, height=240, depth=True)
+        depth_img = a[1]
+        depth_img = depth_img[:, ::-1]
+        lockcv2.acquire()
+        queue_img.append(depth_img)
+        lockcv2.release()
             
 '''
 convert a unit quaternion to angle/axis representation
