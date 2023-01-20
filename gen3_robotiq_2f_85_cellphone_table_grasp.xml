@@ -41,20 +41,20 @@
  
             <!-- Cameras: begin -->
 
-            <body name="top" euler="0 0 0" pos="0.53 0 2.52" >
-                <camera name="realsense-top" fovy="41"/>
+            <body name="top" >
+                <camera name="realsense-top" euler="0 0 0" pos="0.53 0 2.52" fovy="41"/>
             </body>
 
-            <body name="front" euler="-1.57 1.57 0" pos="1.37 0 1.12" >
-                <camera name="realsense-front" fovy="41"/>
+            <body name="front" >
+                <camera name="realsense-front" euler="-1.57 1.57 0" pos="1.37 0 1.12" fovy="41"/>
             </body>
 
-            <body name="side-1" euler="-1.57 0 0" pos="0.53 1.5 1.12" >
-                <camera name="realsense-side-1" fovy="41"/>
+            <body name="side-1" >
+                <camera name="realsense-side-1" euler="-1.57 0 0" pos="0.53 1.5 1.12" fovy="41"/>
             </body>
 
-            <body name="side-2" euler="1.57 0 3.14" pos="0.53 -1.5 1.12" >
-                <camera name="realsense-side-2" fovy="41"/>
+            <body name="side-2" >
+                <camera name="realsense-side-2" euler="1.57 0 3.14" pos="0.53 -1.5 1.12" fovy="41"/>
             </body>
 
             <!-- Cameras: end -->

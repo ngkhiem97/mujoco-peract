@@ -1,5 +1,5 @@
 import mujoco_py
-from mujoco_py import load_model_from_xml, MjSim, MjViewer, MjRenderContextOffscreen
+from mujoco_py import load_model_from_xml, MjSim, MjViewer, MjRenderContext
 from mujoco_py import cymj
 from mujoco_py.utils import remove_empty_lines
 from mujoco_py.builder import build_callback_fn
@@ -18,6 +18,9 @@ from stl.mesh import Mesh
 from VelocityController import *
 import time
 import argparse
+
+import datetime
+from mujoco_camera_util import *
 
 class SimulatorVelCtrl: #a communication wrapper for MuJoCo
                    
@@ -60,7 +63,7 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
         self.model = mujoco_py.load_model_from_xml(self.modelStr)
         self.sim = MjSim(self.model)
         self.viewer = MjViewer(self.sim)
-        self.offscreen = MjRenderContextOffscreen(self.sim, 0, quiet = True)
+        self.offscreen = MjRenderContext(self.sim, 0, quiet = True)
         self.goal = self.sim.data.get_site_xpos('target0')
         self.nv = nv
         self.v_tgt = np.zeros(self.nv)
@@ -460,6 +463,65 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
                 ang_v = np.array([1,0,0,0])
                 pos_v = np.array([0,0,0])
                 twist_ee = np.array([0, 0, 0, 0, 0, 0])
+            elif keypressed == ord('y'): # save the simulator model
+                print("save the simulator model")
+                time = datetime.datetime.now()
+                filename = 'saves/robot_'+str(time.year)+'_'+str(time.month)+'_'+str(time.day)+'_'+str(time.hour)+'_'+str(time.minute)+'_'+str(time.second)+'.xml'
+                file = open(filename, 'w')
+                self.sim.save(file, 'xml')
+                print("save the simulator model done")
+
+                print("cam_pos")
+                print(self.sim.model.cam_pos[0])
+                print(self.sim.model.cam_pos[1])
+                print(self.sim.model.cam_pos[2])
+                print(self.sim.model.cam_pos[3])
+
+                print("cam_quat")
+                print(self.sim.model.cam_quat[0])
+                print(self.sim.model.cam_quat[1])
+                print(self.sim.model.cam_quat[2])
+                print(self.sim.model.cam_quat[3])
+
+                print("cam_poscom0")
+                print(self.sim.model.cam_poscom0[0])
+                print(self.sim.model.cam_poscom0[1])
+                print(self.sim.model.cam_poscom0[2])
+                print(self.sim.model.cam_poscom0[3])
+
+                print("cam_pos0")
+                print(self.sim.model.cam_pos0[0])
+                print(self.sim.model.cam_pos0[1])
+                print(self.sim.model.cam_pos0[2])
+                print(self.sim.model.cam_pos0[3])
+
+                print("cam_mat0")
+                print(self.sim.model.cam_mat0[0])
+                print(self.sim.model.cam_mat0[1])
+                print(self.sim.model.cam_mat0[2])
+                print(self.sim.model.cam_mat0[3])
+
+                print("cam_ipd")
+                print(self.sim.model.cam_ipd[0])
+                print(self.sim.model.cam_ipd[1])
+                print(self.sim.model.cam_ipd[2])
+                print(self.sim.model.cam_ipd[3])
+
+                print("extrinsic")
+                print(get_camera_extrinsic_matrix(self.sim, "realsense-top"))
+                print(get_camera_extrinsic_matrix(self.sim, "realsense-front"))
+                print(get_camera_extrinsic_matrix(self.sim, "realsense-side-1"))
+                print(get_camera_extrinsic_matrix(self.sim, "realsense-side-2"))
+
+                # width=424, height=240
+                print("intrinsic")
+                print(get_camera_intrinsic_matrix(self.sim, "realsense-top", 240, 424))
+                print(get_camera_intrinsic_matrix(self.sim, "realsense-front", 240, 424))
+                print(get_camera_intrinsic_matrix(self.sim, "realsense-side-1", 240, 424))
+                print(get_camera_intrinsic_matrix(self.sim, "realsense-side-2", 240, 424))
+
+                # export the camera as image
+                print("export the camera as image")
            
             if is_cmd_received:
                 self.twist_ee = twist_ee
@@ -475,10 +537,10 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
             self.lock.release()
             
             # self.show_image(title)
-            self.show_depth_image("Camera Output Top", self.queue_img)
-            self.show_depth_image("Camera Output Front", self.queue_img_front)
-            self.show_depth_image("Camera Output Side 1", self.queue_img_side1)
-            self.show_depth_image("Camera Output Side 2", self.queue_img_side2)
+            self.show_color_image("top", self.queue_img)
+            self.show_color_image("front", self.queue_img_front)
+            self.show_color_image("side_1", self.queue_img_side1)
+            self.show_color_image("side_2", self.queue_img_side2)
         cv2.destroyAllWindows()
   
     def show_depth_image(self, title, queue_img):
@@ -503,11 +565,17 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
             image_data[image_data>=dplim_upper]=1.0
             
             #add noise
-            image_noise_1=stats.distributions.norm.rvs(0,0.00005,size=image_data.shape)
-            image_noise_2=np.random.normal(0,0.00015,size=image_data.shape)
-            image_data = image_data + image_noise_1 + image_noise_2
+            # image_noise_1=stats.distributions.norm.rvs(0,0.00005,size=image_data.shape)
+            # image_noise_2=np.random.normal(0,0.00015,size=image_data.shape)
+            # image_data = image_data + image_noise_1 + image_noise_2
+
             norm_image = cv2.normalize(image_data, None, alpha = 0, beta = 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)            
             cv2.imshow(title, norm_image)
+
+            # export the camera as image
+            time = datetime.datetime.now()
+            filename = 'data/episode0/'+title+'_depth/robot_'+str(time.year)+'_'+str(time.month)+'_'+str(time.day)+'_'+str(time.hour)+'_'+str(time.minute)+'_'+str(time.second)+'.png'
+            cv2.imwrite(filename, norm_image*255)
 
     def show_color_image(self, title, queue_img):
         image_data = []
@@ -517,6 +585,11 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
         self.lockcv2.release()
         if len(image_data) != 0:
             cv2.imshow(title, image_data)
+
+            # export the camera as image
+            time = datetime.datetime.now()
+            filename = 'data/episode0/'+title+'_rgb/robot_'+str(time.year)+'_'+str(time.month)+'_'+str(time.day)+'_'+str(time.hour)+'_'+str(time.minute)+'_'+str(time.second)+'.png'
+            cv2.imwrite(filename, image_data)
 
     def start(self):
         ct = 0       
@@ -532,10 +605,10 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
             self.lock1.release()
             self.viewer.render()
             if ct%17 == 1:
-                self.push_depth_image_to_queue(self.queue_img,  0,self.lockcv2)
-                self.push_depth_image_to_queue(self.queue_img_front, 1, self.lockcv2Front)
-                self.push_depth_image_to_queue(self.queue_img_side1, 2, self.lockcv2Side1)
-                self.push_depth_image_to_queue(self.queue_img_side2, 3, self.lockcv2Side2)
+                self.push_rgb_image_to_queue(self.queue_img,  0,self.lockcv2)
+                self.push_rgb_image_to_queue(self.queue_img_front, 1, self.lockcv2Front)
+                self.push_rgb_image_to_queue(self.queue_img_side1, 2, self.lockcv2Side1)
+                self.push_rgb_image_to_queue(self.queue_img_side2, 3, self.lockcv2Side2)
 
     def push_rgb_image_to_queue(self, queue_img, camera_id, lockcv2):
         self.offscreen.render(width=424, height=240, camera_id=camera_id)
