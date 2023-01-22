@@ -5,3 +5,9 @@ This repo holds a robotic arm implementation of the PerAct behavorial learning t
 The robot model can perform a specific task based on the user language command (open drawers, pick up objects,...)
 
 In this project, the 3D presentation of the robot scene is converted into a [Voxel](https://en.wikipedia.org/wiki/Voxel) presentation, before the voxels are fed into the PerAct model. The model predicts the next actions for the robot to complete the commanded task.
+
+In order to run the repository, please run this following command
+
+```bash
+./start.script
+```
