@@ -22,6 +22,11 @@ import argparse
 import datetime
 from mujoco_camera_util import *
 
+from PIL import Image
+
+CAMERA_WIDTH = 128
+CAMERA_HEIGHT = 128
+
 class SimulatorVelCtrl: #a communication wrapper for MuJoCo
                    
     def init(self, modelFile, nv, action):
@@ -515,10 +520,10 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
 
                 # width=424, height=240
                 print("intrinsic")
-                print(get_camera_intrinsic_matrix(self.sim, "realsense-top", 240, 424))
-                print(get_camera_intrinsic_matrix(self.sim, "realsense-front", 240, 424))
-                print(get_camera_intrinsic_matrix(self.sim, "realsense-side-1", 240, 424))
-                print(get_camera_intrinsic_matrix(self.sim, "realsense-side-2", 240, 424))
+                print(get_camera_intrinsic_matrix(self.sim, "realsense-top", CAMERA_WIDTH, CAMERA_HEIGHT))
+                print(get_camera_intrinsic_matrix(self.sim, "realsense-front", CAMERA_WIDTH, CAMERA_HEIGHT))
+                print(get_camera_intrinsic_matrix(self.sim, "realsense-side-1", CAMERA_WIDTH, CAMERA_HEIGHT))
+                print(get_camera_intrinsic_matrix(self.sim, "realsense-side-2", CAMERA_WIDTH, CAMERA_HEIGHT))
 
                 # export the camera as image
                 print("export the camera as image")
@@ -558,24 +563,32 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
             s = div_far-div_near
             image_data = 1/(s*image_data + div_near)
             
-            #limit measurement range
+            # limit measurement range
             dplim_upper = 2
             dplim_lower = 0.16
-            image_data[image_data<=dplim_lower]=0
-            image_data[image_data>=dplim_upper]=1.0
+            image_data[image_data<=dplim_lower]=dplim_lower
+            image_data[image_data>=dplim_upper]=dplim_upper
             
-            #add noise
-            # image_noise_1=stats.distributions.norm.rvs(0,0.00005,size=image_data.shape)
-            # image_noise_2=np.random.normal(0,0.00015,size=image_data.shape)
-            # image_data = image_data + image_noise_1 + image_noise_2
+            # #add noise
+            image_noise_1=stats.distributions.norm.rvs(0,0.00005,size=image_data.shape)
+            image_noise_2=np.random.normal(0,0.00015,size=image_data.shape)
+            image_data = image_data + image_noise_1 + image_noise_2
 
-            norm_image = cv2.normalize(image_data, None, alpha = 0, beta = 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)            
-            cv2.imshow(title, norm_image)
+            image_data = cv2.normalize(image_data, None, alpha = 0, beta = 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)            
+            cv2.imshow(title, image_data)
+            
+            time = datetime.datetime.now()
+            depth = float_array_to_rgb_image(image_data, 2**24 - 1)
+            filename = 'data/episode1/'+title+'_depth/robot_'+str(time.year)+'_'+str(time.month)+'_'+str(time.day)+'_'+str(time.hour)+'_'+str(time.minute)+'_'+str(time.second)+'.png'
+            depth.save(filename)
+
+            # print min and max value
+            # print(np.min(image_data), np.max(image_data))
 
             # export the camera as image
-            time = datetime.datetime.now()
-            filename = 'data/episode0/'+title+'_depth/robot_'+str(time.year)+'_'+str(time.month)+'_'+str(time.day)+'_'+str(time.hour)+'_'+str(time.minute)+'_'+str(time.second)+'.png'
-            cv2.imwrite(filename, norm_image*255)
+            # time = datetime.datetime.now()
+            # filename = 'data/episode1/'+title+'_depth/robot_'+str(time.year)+'_'+str(time.month)+'_'+str(time.day)+'_'+str(time.hour)+'_'+str(time.minute)+'_'+str(time.second)+'.png'
+            # cv2.imwrite(filename, image_data)
 
     def show_color_image(self, title, queue_img):
         image_data = []
@@ -587,9 +600,9 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
             cv2.imshow(title, image_data)
 
             # export the camera as image
-            time = datetime.datetime.now()
-            filename = 'data/episode0/'+title+'_rgb/robot_'+str(time.year)+'_'+str(time.month)+'_'+str(time.day)+'_'+str(time.hour)+'_'+str(time.minute)+'_'+str(time.second)+'.png'
-            cv2.imwrite(filename, image_data)
+            # time = datetime.datetime.now()
+            # filename = 'data/episode1/'+title+'_rgb/robot_'+str(time.year)+'_'+str(time.month)+'_'+str(time.day)+'_'+str(time.hour)+'_'+str(time.minute)+'_'+str(time.second)+'.png'
+            # cv2.imwrite(filename, image_data)
 
     def start(self):
         ct = 0       
@@ -611,8 +624,8 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
                 self.push_rgb_image_to_queue(self.queue_img_side2, 3, self.lockcv2Side2)
 
     def push_rgb_image_to_queue(self, queue_img, camera_id, lockcv2):
-        self.offscreen.render(width=424, height=240, camera_id=camera_id)
-        a=self.offscreen.read_pixels(width=424, height=240, depth=True)
+        self.offscreen.render(width=CAMERA_WIDTH, height=CAMERA_HEIGHT, camera_id=camera_id)
+        a=self.offscreen.read_pixels(width=CAMERA_WIDTH, height=CAMERA_HEIGHT, depth=True)
         rgb_img = a[0]
         rgb_img = rgb_img[:, ::-1, ::-1]
         lockcv2.acquire()
@@ -620,8 +633,8 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
         lockcv2.release()
 
     def push_depth_image_to_queue(self, queue_img, camera_id, lockcv2):
-        self.offscreen.render(width=424, height=240, camera_id=camera_id)
-        a=self.offscreen.read_pixels(width=424, height=240, depth=True)
+        self.offscreen.render(width=CAMERA_WIDTH, height=CAMERA_HEIGHT, camera_id=camera_id)
+        a=self.offscreen.read_pixels(width=CAMERA_WIDTH, height=CAMERA_HEIGHT, depth=True)
         depth_img = a[1]
         depth_img = depth_img[:, ::-1]
         lockcv2.acquire()
@@ -686,6 +699,78 @@ def mat2euler(mat):
                              -np.arctan2(mat[..., 1, 2], mat[..., 2, 2]),
                              0.0)
     return euler
+
+def ClipFloatValues(float_array, min_value, max_value):
+  """Clips values to the range [min_value, max_value].
+
+  First checks if any values are out of range and prints a message.
+  Then clips all values to the given range.
+
+  Args:
+    float_array: 2D array of floating point values to be clipped.
+    min_value: Minimum value of clip range.
+    max_value: Maximum value of clip range.
+
+  Returns:
+    The clipped array.
+
+  """
+  if float_array.min() < min_value or float_array.max() > max_value:
+    float_array = np.clip(float_array, min_value, max_value)
+  return float_array
+
+DEFAULT_RGB_SCALE_FACTOR = 256000.0
+
+def float_array_to_rgb_image(float_array,
+                             scale_factor=DEFAULT_RGB_SCALE_FACTOR,
+                             drop_blue=False):
+  """Convert a floating point array of values to an RGB image.
+
+  Convert floating point values to a fixed point representation where
+  the RGB bytes represent a 24-bit integer.
+  R is the high order byte.
+  B is the low order byte.
+  The precision of the depth image is 1/256 mm.
+
+  Floating point values are scaled so that the integer values cover
+  the representable range of depths.
+
+  This image representation should only use lossless compression.
+
+  Args:
+    float_array: Input array of floating point depth values in meters.
+    scale_factor: Scale value applied to all float values.
+    drop_blue: Zero out the blue channel to improve compression, results in 1mm
+      precision depth values.
+
+  Returns:
+    24-bit RGB PIL Image object representing depth values.
+  """
+  # Scale the floating point array.
+  scaled_array = np.floor(float_array * scale_factor + 0.5)
+  # Convert the array to integer type and clip to representable range.
+  min_inttype = 0
+  max_inttype = 2**24 - 1
+  scaled_array = ClipFloatValues(scaled_array, min_inttype, max_inttype)
+  int_array = scaled_array.astype(np.uint32)
+  # Calculate:
+  #   r = (f / 256) / 256  high byte
+  #   g = (f / 256) % 256  middle byte
+  #   b = f % 256          low byte
+  rg = np.divide(int_array, 256)
+  r = np.divide(rg, 256)
+  g = np.mod(rg, 256)
+  image_shape = int_array.shape
+  rgb_array = np.zeros((image_shape[0], image_shape[1], 3), dtype=np.uint8)
+  rgb_array[..., 0] = r
+  rgb_array[..., 1] = g
+  if not drop_blue:
+    # Calculate the blue channel and add it to the array.
+    b = np.mod(int_array, 256)
+    rgb_array[..., 2] = b
+  image_mode = 'RGB'
+  image = Image.fromarray(rgb_array, mode=image_mode)
+  return image
     
 if __name__ == "__main__":
     # get parameters
