@@ -36,10 +36,6 @@ def get_stored_demo(data_path, index):
   with open(os.path.join(episode_path, LOW_DIM_PICKLE), 'rb') as f:
     obs = pickle.load(f)
 
-#   print('Observation:')
-#   pprint.pprint(obs[0])
-#   pprint.pprint(obs[0].__dict__)
-
   num_steps = len(obs)
   for i in range(num_steps):
     obs[i].top_rgb = np.array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_TOP, IMAGE_RGB), IMAGE_FORMAT % i)))
