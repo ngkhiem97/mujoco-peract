@@ -398,5 +398,5 @@ class Simulator:
                 self.push_cameras()
 
 if __name__ == "__main__":
-    sim = Simulator("robot_2023_1_17_12_17_30.xml")
+    sim = Simulator("3dmodel/robot_2023_1_17_12_17_30.xml")
     sim.start()
