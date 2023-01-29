@@ -34,10 +34,13 @@ def get_camera_extrinsic_matrix(sim, camera_name):
     Return:
         R (np.array): 4x4 camera extrinsic matrix
     """
+    print(f'get_camera_extrinsic_matrix: camera_name={camera_name}')
     cam_id = sim.model.camera_name2id(camera_name)
     camera_pos = sim.data.cam_xpos[cam_id]
     camera_rot = sim.data.cam_xmat[cam_id].reshape(3, 3)
     R = make_pose(camera_pos, camera_rot)
+
+    print(f'get_camera_extrinsic_matrix: R={R}')
 
     # IMPORTANT! This is a correction so that the camera axis is set up along the viewpoint correctly.
     camera_axis_correction = np.array([

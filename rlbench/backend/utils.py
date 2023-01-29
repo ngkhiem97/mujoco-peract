@@ -72,9 +72,9 @@ def extract_obs(obs: Observation,
 
     obs_dict = vars(obs)
     obs_dict = {k: v for k, v in obs_dict.items() if v is not None}
-    robot_state = np.array([
-                  obs.gripper_open,
-                  *obs.gripper_joint_positions])
+    # robot_state = np.array([
+    #               obs.gripper_open,
+    #               *obs.gripper_joint_positions])
     # remove low-level proprioception variables that are not needed
     obs_dict = {k: v for k, v in obs_dict.items()
                 if k not in REMOVE_KEYS}
@@ -88,10 +88,10 @@ def extract_obs(obs: Observation,
         # add extra dim to depth data
         obs_dict = {k: v if v.ndim == 3 else np.expand_dims(v, -1)
                     for k, v in obs_dict.items()}
-    obs_dict['low_dim_state'] = np.array(robot_state, dtype=np.float32)
+    # obs_dict['low_dim_state'] = np.array(robot_state, dtype=np.float32)
 
     # binary variable indicating if collisions are allowed or not while planning paths to reach poses
-    obs_dict['ignore_collisions'] = np.array([obs.ignore_collisions], dtype=np.float32)
+    # obs_dict['ignore_collisions'] = np.array([obs.ignore_collisions], dtype=np.float32)
     for (k, v) in [(k, v) for k, v in obs_dict.items() if 'point_cloud' in k]:
         obs_dict[k] = v.astype(np.float32)
 
@@ -100,10 +100,10 @@ def extract_obs(obs: Observation,
           obs_dict['%s_camera_intrinsics' % camera_name] = obs.misc['%s_camera_intrinsics' % camera_name]
 
     # add timestep to low_dim_state
-    episode_length = 10 # TODO fix this
-    time = (1. - (t / float(episode_length - 1))) * 2. - 1.
-    obs_dict['low_dim_state'] = np.concatenate(
-        [obs_dict['low_dim_state'], [time]]).astype(np.float32)
+    # episode_length = 10 # TODO fix this
+    # time = (1. - (t / float(episode_length - 1))) * 2. - 1.
+    # obs_dict['low_dim_state'] = np.concatenate(
+    #     [obs_dict['low_dim_state'], [time]]).astype(np.float32)
 
     obs.gripper_matrix = grip_mat
     obs.joint_positions = joint_pos
