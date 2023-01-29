@@ -251,7 +251,7 @@ class Simulator:
         self.lock_cameras.release()
         for title, camera_id in zip(CAMERAS, [0, 1, 2, 3]):
             cv2.imshow(title+"_rgb", rgb_imgs[camera_id])
-            # cv2.imshow(title+"_depth", depth_imgs[camera_id])
+            cv2.imshow(title+"_depth", np.array(depth_imgs[camera_id]))
         if self.is_save == False:
             return
         time = datetime.datetime.now()
@@ -385,16 +385,16 @@ class Simulator:
         return depth_img
 
     def start(self):
-        ct = 0       
+        step = 0       
         while True:  
             self.sim.data.qfrc_applied[0:DOF] = self.sim.data.qfrc_bias[0:DOF]
             self.sim.data.qvel[0:DOF] = self.v_tgt[0:DOF]
-            if (ct*self.sim.model.opt.timestep/0.01).is_integer(): # update the target velocity every 0.01 seconds
+            if (step*self.sim.model.opt.timestep/0.01).is_integer(): # update the target velocity every 0.01 seconds
                 self.update_states()
-            ct = ct + 1                
+            step = step + 1                
             self.sim.step()
             self.viewer.render()
-            if ct%17 == 1:
+            if step%17 == 1:
                 self.push_cameras()
 
 if __name__ == "__main__":
