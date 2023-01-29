@@ -2,7 +2,7 @@ import mujoco_py
 from mujoco_py import MjSim, MjViewer, MjRenderContext
 import numpy as np
 from collections import deque
-from VelocityController import *
+from components.velocity_controller import *
 import threading
 import cv2
 import datetime
