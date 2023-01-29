@@ -371,7 +371,7 @@ class SimulatorVelCtrl: #a communication wrapper for MuJoCo
         self.lock1.acquire()
         for i in range(7):
             self.sim.data.qpos[i] = qtgt[i]
-        self.lock1.release()          
+        self.lock1.release()
         
         gqtgt = float(self.sim.data.ctrl[self.nv])
         self.initQpos = [self.sim.data.qpos[i] for i in range(self.sim.model.nq)]
