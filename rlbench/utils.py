@@ -14,9 +14,9 @@ import pprint
 EPISODE_FOLDER = 'episode%d'
 
 CAMERA_FRONT = 'front'
-CAMERA_LS = 'left_shoulder'
-CAMERA_RS = 'right_shoulder'
-CAMERA_WRIST = 'wrist'
+CAMERA_LS = 'top'
+CAMERA_RS = 'side_1'
+CAMERA_WRIST = 'side_2'
 CAMERAS = [CAMERA_FRONT, CAMERA_LS, CAMERA_RS, CAMERA_WRIST]
 
 IMAGE_RGB = 'rgb'
@@ -36,52 +36,48 @@ def get_stored_demo(data_path, index):
   with open(os.path.join(episode_path, LOW_DIM_PICKLE), 'rb') as f:
     obs = pickle.load(f)
 
-  # print('Observation:')
-  # pprint.pprint(obs[0])
-  # pprint.pprint(obs[0].__dict__)
-
   # variation number
-  with open(os.path.join(episode_path, VARIATION_NUMBER_PICKLE), 'rb') as f:
-    obs.variation_number = pickle.load(f)
+  # with open(os.path.join(episode_path, VARIATION_NUMBER_PICKLE), 'rb') as f:
+  #   obs.variation_number = pickle.load(f)
 
   num_steps = len(obs)
   for i in range(num_steps):
     obs[i].front_rgb = np.array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_FRONT, IMAGE_RGB), IMAGE_FORMAT % i)))
-    obs[i].left_shoulder_rgb = np.array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_LS, IMAGE_RGB), IMAGE_FORMAT % i)))
-    obs[i].right_shoulder_rgb = np.array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_RS, IMAGE_RGB), IMAGE_FORMAT % i)))
-    obs[i].wrist_rgb = np.array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_WRIST, IMAGE_RGB), IMAGE_FORMAT % i)))
+    obs[i].top_rgb = np.array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_LS, IMAGE_RGB), IMAGE_FORMAT % i)))
+    obs[i].side_1_rgb = np.array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_RS, IMAGE_RGB), IMAGE_FORMAT % i)))
+    obs[i].side_2_rgb = np.array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_WRIST, IMAGE_RGB), IMAGE_FORMAT % i)))
 
     obs[i].front_depth = image_to_float_array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_FRONT, IMAGE_DEPTH), IMAGE_FORMAT % i)), DEPTH_SCALE)
     near = obs[i].misc['%s_camera_near' % (CAMERA_FRONT)]
     far = obs[i].misc['%s_camera_far' % (CAMERA_FRONT)]
     obs[i].front_depth = near + obs[i].front_depth * (far - near)
 
-    obs[i].left_shoulder_depth = image_to_float_array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_LS, IMAGE_DEPTH), IMAGE_FORMAT % i)), DEPTH_SCALE)
+    obs[i].top_depth = image_to_float_array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_LS, IMAGE_DEPTH), IMAGE_FORMAT % i)), DEPTH_SCALE)
     near = obs[i].misc['%s_camera_near' % (CAMERA_LS)]
     far = obs[i].misc['%s_camera_far' % (CAMERA_LS)]
-    obs[i].left_shoulder_depth = near + obs[i].left_shoulder_depth * (far - near)
+    obs[i].top_depth = near + obs[i].top_depth * (far - near)
 
-    obs[i].right_shoulder_depth = image_to_float_array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_RS, IMAGE_DEPTH), IMAGE_FORMAT % i)), DEPTH_SCALE)
+    obs[i].side_1_depth = image_to_float_array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_RS, IMAGE_DEPTH), IMAGE_FORMAT % i)), DEPTH_SCALE)
     near = obs[i].misc['%s_camera_near' % (CAMERA_RS)]
     far = obs[i].misc['%s_camera_far' % (CAMERA_RS)]
-    obs[i].right_shoulder_depth = near + obs[i].right_shoulder_depth * (far - near)
+    obs[i].side_1_depth = near + obs[i].side_1_depth * (far - near)
 
-    obs[i].wrist_depth = image_to_float_array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_WRIST, IMAGE_DEPTH), IMAGE_FORMAT % i)), DEPTH_SCALE)
+    obs[i].side_2_depth = image_to_float_array(Image.open(os.path.join(episode_path, '%s_%s' % (CAMERA_WRIST, IMAGE_DEPTH), IMAGE_FORMAT % i)), DEPTH_SCALE)
     near = obs[i].misc['%s_camera_near' % (CAMERA_WRIST)]
     far = obs[i].misc['%s_camera_far' % (CAMERA_WRIST)]
-    obs[i].wrist_depth = near + obs[i].wrist_depth * (far - near)
+    obs[i].side_2_depth = near + obs[i].side_2_depth * (far - near)
 
     obs[i].front_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].front_depth, 
                                                                                     obs[i].misc['front_camera_extrinsics'],
                                                                                     obs[i].misc['front_camera_intrinsics'])
-    obs[i].left_shoulder_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].left_shoulder_depth, 
-                                                                                            obs[i].misc['left_shoulder_camera_extrinsics'],
-                                                                                            obs[i].misc['left_shoulder_camera_intrinsics'])
-    obs[i].right_shoulder_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].right_shoulder_depth, 
-                                                                                             obs[i].misc['right_shoulder_camera_extrinsics'],
-                                                                                             obs[i].misc['right_shoulder_camera_intrinsics'])
-    obs[i].wrist_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].wrist_depth, 
-                                                                                           obs[i].misc['wrist_camera_extrinsics'],
-                                                                                           obs[i].misc['wrist_camera_intrinsics'])
+    obs[i].top_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].top_depth, 
+                                                                                            obs[i].misc['top_camera_extrinsics'],
+                                                                                            obs[i].misc['top_camera_intrinsics'])
+    obs[i].side_1_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].side_1_depth, 
+                                                                                             obs[i].misc['side_1_camera_extrinsics'],
+                                                                                             obs[i].misc['side_1_camera_intrinsics'])
+    obs[i].side_2_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].side_2_depth, 
+                                                                                           obs[i].misc['side_2_camera_extrinsics'],
+                                                                                           obs[i].misc['side_2_camera_intrinsics'])
     
   return obs
