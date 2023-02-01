@@ -28,6 +28,8 @@ VARIATION_NUMBER_PICKLE = 'variation_number.pkl'
 
 DEPTH_SCALE = 2**24 - 1
 
+OFFSET = 1
+
 # functions
 def get_stored_demo(data_path, index):
   episode_path = os.path.join(data_path, EPISODE_FOLDER % index)
@@ -67,16 +69,16 @@ def get_stored_demo(data_path, index):
     far = obs[i].misc['%s_camera_far' % (CAMERA_WRIST)]
     obs[i].side_2_depth = near + obs[i].side_2_depth * (far - near)
 
-    obs[i].front_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].front_depth, 
+    obs[i].front_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].front_depth+OFFSET, 
                                                                                     obs[i].misc['front_camera_extrinsics'],
                                                                                     obs[i].misc['front_camera_intrinsics'])
-    obs[i].top_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].top_depth, 
+    obs[i].top_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].top_depth+OFFSET, 
                                                                                             obs[i].misc['top_camera_extrinsics'],
                                                                                             obs[i].misc['top_camera_intrinsics'])
-    obs[i].side_1_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].side_1_depth, 
+    obs[i].side_1_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].side_1_depth+OFFSET, 
                                                                                              obs[i].misc['side_1_camera_extrinsics'],
                                                                                              obs[i].misc['side_1_camera_intrinsics'])
-    obs[i].side_2_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].side_2_depth, 
+    obs[i].side_2_point_cloud = VisionSensor.pointcloud_from_depth_and_camera_params(obs[i].side_2_depth+OFFSET, 
                                                                                            obs[i].misc['side_2_camera_extrinsics'],
                                                                                            obs[i].misc['side_2_camera_intrinsics'])
     
