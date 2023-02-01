@@ -204,9 +204,14 @@ class Simulator:
         Return:
             R (np.array): 4x4 camera extrinsic matrix
         """
+        print(f'camera_name: {camera_name}')
         cam_id = self.sim.model.camera_name2id(camera_name)
+        print(f'cam_id: {cam_id}')
         camera_pos = self.sim.data.cam_xpos[cam_id]
+        print(f'camera_pos: {camera_pos}')
+        print(f'cam_xmat: {self.sim.data.cam_xmat[cam_id]}')
         camera_rot = self.sim.data.cam_xmat[cam_id].reshape(3, 3)
+        print(f'camera_rot: {camera_rot}')
         R = self.make_pose(camera_pos, camera_rot)
 
         # IMPORTANT! This is a correction so that the camera axis is set up along the viewpoint correctly.
