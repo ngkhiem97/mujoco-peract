@@ -185,7 +185,7 @@ class Simulator:
         cam_id = self.sim.model.camera_name2id(camera_name)
         fovy = self.sim.model.cam_fovy[cam_id]
         f = 0.5 * CAMERA_HEIGHT / np.tan(fovy * np.pi / 360)
-        K = np.array([[f, 0, CAMERA_WIDTH / 2], [0, f, CAMERA_HEIGHT / 2], [0, 0, 1]])
+        K = np.array([[-f, 0, CAMERA_WIDTH / 2], [0, -f, CAMERA_HEIGHT / 2], [0, 0, 1]])
         return K
 
 
@@ -206,9 +206,7 @@ class Simulator:
         """
         cam_id = self.sim.model.camera_name2id(camera_name)
         camera_pos = self.sim.data.cam_xpos[cam_id]
-        print(f'camera_rot without reshape: {self.sim.data.cam_xmat[cam_id]}')
         camera_rot = self.sim.data.cam_xmat[cam_id].reshape(3, 3)
-        print(f'camera_rot: {camera_rot}')
         R = self.make_pose(camera_pos, camera_rot)
 
         # IMPORTANT! This is a correction so that the camera axis is set up along the viewpoint correctly.
@@ -219,7 +217,6 @@ class Simulator:
             [0., 0., 0., 1.]]
         )
         R = R @ camera_axis_correction
-        print(f'extrinsics: {R}')
         return R
 
     def make_pose(self, translation, rotation):
