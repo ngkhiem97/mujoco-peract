@@ -11,3 +11,11 @@ In order to run the repository, please run this following command
 ```bash
 ./start.script
 ```
+
+Before starting the program, please make sure to export the following environment variables
+
+```bash
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/khiem/.mujoco/mujoco210/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/nvidia
+export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLEW.so
+```
