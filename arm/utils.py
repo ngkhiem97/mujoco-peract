@@ -158,7 +158,6 @@ def visualise_voxel(voxel_grid: np.ndarray,
         p = _compute_initial_camera_pose(s)
         t = Trackball(p, (r.viewport_width, r.viewport_height), s.scale, s.centroid)
         t.rotate(rotation_amount, np.array([0.0, 0.0, 1.0]))
-        t.rotate(np.pi, np.array([0.0, 1.0, 0.0]))
         s.add(cam, pose=t.pose)
 
         if render_gripper:
