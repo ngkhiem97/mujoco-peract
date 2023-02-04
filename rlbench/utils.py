@@ -28,7 +28,7 @@ VARIATION_NUMBER_PICKLE = 'variation_number.pkl'
 
 DEPTH_SCALE = 2**24 - 1
 
-OFFSET = 1
+OFFSET = 0
 
 # functions
 def get_stored_demo(data_path, index):
