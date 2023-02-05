@@ -206,9 +206,7 @@ class Simulator:
         """
         cam_id = self.sim.model.camera_name2id(camera_name)
         camera_pos = self.sim.data.cam_xpos[cam_id]
-        print(f'camera_rot without reshape: {self.sim.data.cam_xmat[cam_id]}')
         camera_rot = self.sim.data.cam_xmat[cam_id].reshape(3, 3)
-        print(f'camera_rot: {camera_rot}')
         R = self.make_pose(camera_pos, camera_rot)
 
         # IMPORTANT! This is a correction so that the camera axis is set up along the viewpoint correctly.
@@ -373,10 +371,10 @@ class Simulator:
         s = div_far-div_near
         depth_img = 1/(s*depth_img + div_near)
         # limit measurement range
-        dplim_upper = 2
+        # dplim_upper = 2
         dplim_lower = 0.16
         depth_img[depth_img<=dplim_lower]=dplim_lower
-        depth_img[depth_img>=dplim_upper]=dplim_upper
+        # depth_img[depth_img>=dplim_upper]=dplim_upper
         # add noise
         image_noise_1=stats.distributions.norm.rvs(0,0.00005,size=depth_img.shape)
         image_noise_2=np.random.normal(0,0.00015,size=depth_img.shape)
