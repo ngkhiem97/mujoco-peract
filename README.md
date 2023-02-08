@@ -29,7 +29,7 @@ Here are the images input for the voxelization.
 
 Here is the voxelization result.
 
-![Voxelization result](./images/voxels.png "Voxelization result")
+![Voxelization result](./images/voxels.gif "Voxelization result")
 
 
 <!-- The calibration is done by using the [OpenCV](https://opencv.org/) library. -->
