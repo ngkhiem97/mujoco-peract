@@ -23,7 +23,11 @@ After running the command, the MuJoCo simulator should show the following.
 
 The Voxelization.ipynb and Voxel_Calibration.ipynb files are Python notebooks that are used to convert the RGB and depth images into voxels. The Voxelization.ipynb file is used to convert the RGB and depth images into voxels. The Voxel_Calibration.ipynb file is used to calibrate the RGB and depth images to the robot model. You should see the following result after running the Voxelization.ipynb and Voxel_Calibration.ipynb files.
 
+Here are the images input for the voxelization.
+
 ![Images imput](./images/simu-images.png "Images imput")
+
+Here is the voxelization result.
 
 ![Voxelization result](./images/voxels.png "Voxelization result")
 
